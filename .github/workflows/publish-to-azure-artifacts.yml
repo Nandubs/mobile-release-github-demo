@@ -1,0 +1,64 @@
+name: Publish to Azure Artifacts
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:   # allow manual trigger from GitHub UI
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify APK exists
+        run: |
+          if [ ! -f "app-release.apk" ]; then
+            echo "ERROR: app-release.apk not found in repo root"
+            exit 1
+          fi
+          echo "Found APK: $(ls -lh app-release.apk)"
+
+      - name: Install Azure CLI extension
+        run: |
+          az extension add --name azure-devops --yes
+          az extension show --name azure-devops
+
+      - name: Authenticate to Azure DevOps
+        env:
+          AZURE_DEVOPS_EXT_PAT: ${{ secrets.AZURE_ARTIFACTS_PAT }}
+        run: |
+          az devops configure --defaults \
+            organization=https://dev.azure.com/209005
+
+      - name: Publish APK to Azure Artifacts feed
+        env:
+          AZURE_DEVOPS_EXT_PAT: ${{ secrets.AZURE_ARTIFACTS_PAT }}
+        run: |
+          # Stage the APK in a clean folder for publishing
+          mkdir -p to-publish
+          cp app-release.apk to-publish/
+
+          # Generate a version number based on GitHub run number
+          VERSION="0.1.${{ github.run_number }}"
+          echo "Publishing version: $VERSION"
+
+          az artifacts universal publish \
+            --organization https://dev.azure.com/209005 \
+            --feed mobile-releases \
+            --name github-demo-app \
+            --version "$VERSION" \
+            --description "From GitHub Actions run ${{ github.run_id }} - commit ${{ github.sha }}" \
+            --path ./to-publish
+
+      - name: Summary
+        run: |
+          echo "=========================================="
+          echo "PUBLISHED TO AZURE ARTIFACTS FEED"
+          echo "Feed:    mobile-releases (org 209005)"
+          echo "Package: github-demo-app"
+          echo "Version: 0.1.${{ github.run_number }}"
+          echo "Source:  GitHub Actions"
+          echo "=========================================="

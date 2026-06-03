@@ -1,0 +1,11 @@
+# Build outputs
+build/
+*.aab
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Node
+node_modules/
