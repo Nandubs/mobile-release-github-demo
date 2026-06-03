@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:   # allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -13,35 +13,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify APK exists
+      - name: Generate dummy build artifact
         run: |
-          if [ ! -f "app-release.apk" ]; then
-            echo "ERROR: app-release.apk not found in repo root"
-            exit 1
-          fi
-          echo "Found APK: $(ls -lh app-release.apk)"
+          mkdir -p build-output
+          # Simulate a build by creating a small dummy APK-like file.
+          # In production, this step would be: ./gradlew bundleRelease
+          echo "DUMMY APK from GitHub Actions run ${{ github.run_id }}" > build-output/app-release.apk
+          echo "Generated build version: 0.1.${{ github.run_number }}"
+          ls -lh build-output/
 
       - name: Install Azure CLI extension
         run: |
           az extension add --name azure-devops --yes
-          az extension show --name azure-devops
 
       - name: Authenticate to Azure DevOps
         env:
           AZURE_DEVOPS_EXT_PAT: ${{ secrets.AZURE_ARTIFACTS_PAT }}
         run: |
-          az devops configure --defaults \
-            organization=https://dev.azure.com/209005
+          az devops configure --defaults organization=https://dev.azure.com/209005
 
-      - name: Publish APK to Azure Artifacts feed
+      - name: Publish to Azure Artifacts feed
         env:
           AZURE_DEVOPS_EXT_PAT: ${{ secrets.AZURE_ARTIFACTS_PAT }}
         run: |
-          # Stage the APK in a clean folder for publishing
-          mkdir -p to-publish
-          cp app-release.apk to-publish/
-
-          # Generate a version number based on GitHub run number
           VERSION="0.1.${{ github.run_number }}"
           echo "Publishing version: $VERSION"
 
@@ -50,8 +44,8 @@ jobs:
             --feed mobile-releases \
             --name github-demo-app \
             --version "$VERSION" \
-            --description "From GitHub Actions run ${{ github.run_id }} - commit ${{ github.sha }}" \
-            --path ./to-publish
+            --description "Build from GitHub Actions run ${{ github.run_id }}, commit ${{ github.sha }}" \
+            --path ./build-output
 
       - name: Summary
         run: |
@@ -60,5 +54,5 @@ jobs:
           echo "Feed:    mobile-releases (org 209005)"
           echo "Package: github-demo-app"
           echo "Version: 0.1.${{ github.run_number }}"
-          echo "Source:  GitHub Actions"
+          echo "Source:  GitHub Actions on Microsoft-hosted runner"
           echo "=========================================="
