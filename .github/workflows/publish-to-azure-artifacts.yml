@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Generate dummy build artifact
+      - name: Generate build artifact
         run: |
           mkdir -p build-output
           # Simulate a build by creating a small dummy APK-like file.
