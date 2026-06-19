@@ -13,8 +13,6 @@ jobs:
       - name: Generate build artifact
         run: |
           mkdir -p build-output
-          # Simulate a build by creating a small dummy APK-like file.
-          # In production, this step would be: ./gradlew bundleRelease
           echo "DUMMY APK from GitHub Actions run ${{ github.run_id }}" > build-output/app-release.apk
           echo "Generated build version: 0.1.${{ github.run_number }}"
           ls -lh build-output/
@@ -39,7 +37,7 @@ jobs:
             --feed ustride \
             --name uust-github \
             --version "$VERSION" \
-            --description "Build from GitHub Actions run ${{ github.run_id }}, commit ${{ github.sha }}" \
+            --description "GitHub Actions run ${{ github.run_id }}, commit ${{ github.sha }}" \
             --path ./build-output
       - name: Summary
         run: |
