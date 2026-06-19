@@ -1,18 +1,15 @@
-name: Publish to Azure Artifacts
-
+name: Publish to Azure Artifacts (USTDEV-IS)
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Generate build artifact
         run: |
           mkdir -p build-output
@@ -21,38 +18,37 @@ jobs:
           echo "DUMMY APK from GitHub Actions run ${{ github.run_id }}" > build-output/app-release.apk
           echo "Generated build version: 0.1.${{ github.run_number }}"
           ls -lh build-output/
-
       - name: Install Azure CLI extension
         run: |
           az extension add --name azure-devops --yes
-
       - name: Authenticate to Azure DevOps
         env:
-          AZURE_DEVOPS_EXT_PAT: ${{ secrets.AZURE_ARTIFACTS_PAT }}
+          AZURE_DEVOPS_EXT_PAT: ${{ secrets.AZURE_ARTIFACTS_PAT_USTDEV }}
         run: |
-          az devops configure --defaults organization=https://dev.azure.com/209005
-
+          az devops configure --defaults organization=https://dev.azure.com/USTDEV-IS
       - name: Publish to Azure Artifacts feed
         env:
-          AZURE_DEVOPS_EXT_PAT: ${{ secrets.AZURE_ARTIFACTS_PAT }}
+          AZURE_DEVOPS_EXT_PAT: ${{ secrets.AZURE_ARTIFACTS_PAT_USTDEV }}
         run: |
           VERSION="0.1.${{ github.run_number }}"
           echo "Publishing version: $VERSION"
-
           az artifacts universal publish \
-            --organization https://dev.azure.com/209005 \
-            --feed mobile-releases \
-            --name github-demo-app \
+            --organization https://dev.azure.com/USTDEV-IS \
+            --project "Mobile-App-Automation-Process" \
+            --scope project \
+            --feed ustride \
+            --name uust-github \
             --version "$VERSION" \
             --description "Build from GitHub Actions run ${{ github.run_id }}, commit ${{ github.sha }}" \
             --path ./build-output
-
       - name: Summary
         run: |
           echo "=========================================="
-          echo "PUBLISHED TO AZURE ARTIFACTS FEED"
-          echo "Feed:    mobile-releases (org 209005)"
-          echo "Package: github-demo-app"
+          echo "PUBLISHED TO USTDEV-IS AZURE ARTIFACTS"
+          echo "Org:     USTDEV-IS"
+          echo "Project: Mobile-App-Automation-Process"
+          echo "Feed:    ustride (project-scoped)"
+          echo "Package: uust-github"
           echo "Version: 0.1.${{ github.run_number }}"
           echo "Source:  GitHub Actions on Microsoft-hosted runner"
           echo "=========================================="
