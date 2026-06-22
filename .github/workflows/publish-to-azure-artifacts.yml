@@ -34,7 +34,7 @@ jobs:
             --organization https://dev.azure.com/USTDEV-IS \
             --project "Mobile-App-Automation-Process" \
             --scope project \
-            --feed ustride \
+            --feed mobile-releases \
             --name uust-github \
             --version "$VERSION" \
             --description "GitHub Actions run ${{ github.run_id }}, commit ${{ github.sha }}" \
